@@ -38,13 +38,16 @@ class Whitestudioteam_AP_Lite {
 		$handle = 'ap-lite';
 		wp_register_script( $handle, false, [], self::VERSION, true );
 
-		$cfg = [
-			'rest'      => esc_url_raw( rest_url( 'ap/v1' ) ),
-			'wpSearch'  => esc_url_raw( rest_url( 'wp/v2/search' ) ),
-			'nonce'     => wp_create_nonce( 'wp_rest' ),
-			'site'      => home_url( '/' ),
+                $type = get_option( 'whitestudioteam_loading_style', 'bar' );
+                $type = ( $type === 'spinner' ) ? 'spinner' : 'bar';
+                $cfg = [
+                        'rest'      => esc_url_raw( rest_url( 'ap/v1' ) ),
+                        'wpSearch'  => esc_url_raw( rest_url( 'wp/v2/search' ) ),
+                        'nonce'     => wp_create_nonce( 'wp_rest' ),
+                        'site'      => home_url( '/' ),
                        'rootSel'   => apply_filters( 'ap_lite_root_selector', '#ap-root' ),
                        'fallbackSels' => apply_filters( 'ap_lite_fallback_selectors', [ 'main', '#content', '#primary', '.site-content', '.content-area', '.entry-content', '.wp-block-post-content', '.wp-site-blocks', '#page', '.site', 'body' ] ),
+                       'loadingStyle' => $type,
                ];
 
                 wp_localize_script( $handle, 'AP_LITE', $cfg );
@@ -55,11 +58,11 @@ class Whitestudioteam_AP_Lite {
                 $height = absint( get_option( 'whitestudioteam_loading_height', 3 ) );
 
                 // minimal styles for progress + search results
-		$css = '/* AjaxPress Lite styles */\n#ap-lite-progress{position:fixed;left:0;top:0;height:3px;width:0;z-index:99999;background:currentColor;opacity:.7;transition:width .25s ease,opacity .25s ease} .ap-live-wrap{position:relative} .ap-live-results{position:absolute;left:0;right:0;top:calc(100% + 6px);max-height:360px;overflow:auto;border:1px solid rgba(0,0,0,.08);background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.08);border-radius:8px;padding:8px} .ap-live-item{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:6px;text-decoration:none} .ap-live-item:hover{background:rgba(0,0,0,.04)} .ap-live-thumb{flex:0 0 48px;height:48px;object-fit:cover;border-radius:6px;background:#f2f2f2} .ap-live-title{font-weight:600;margin:0 0 4px} .ap-live-excerpt{margin:0;font-size:13px;opacity:.85} .ap-live-empty{padding:8px;color:#666;font-size:13px} .ap-live-results, .ap-live-results *{list-style:none;margin:0;padding:0} ';
+                $css = '/* AjaxPress Lite styles */\n#ap-lite-progress{position:fixed;left:0;top:0;height:3px;width:0;z-index:99999;background:currentColor;opacity:.7;transition:width .25s ease,opacity .25s ease} .ap-live-wrap{position:relative} .ap-live-results{position:absolute;left:0;right:0;top:calc(100% + 6px);max-height:360px;overflow:auto;border:1px solid rgba(0,0,0,.08);background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.08);border-radius:8px;padding:8px} .ap-live-item{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:6px;text-decoration:none} .ap-live-item:hover{background:rgba(0,0,0,.04)} .ap-live-thumb{flex:0 0 48px;height:48px;object-fit:cover;border-radius:6px;background:#f2f2f2} .ap-live-title{font-weight:600;margin:0 0 4px} .ap-live-excerpt{margin:0;font-size:13px;opacity:.85} .ap-live-empty{padding:8px;color:#666;font-size:13px} .ap-live-results, .ap-live-results *{list-style:none;margin:0;padding:0} @keyframes ap-lite-spin{to{transform:rotate(360deg);}} #ap-lite-spinner{position:fixed;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border:3px solid currentColor;border-top-color:transparent;border-radius:50%;animation:ap-lite-spin .6s linear infinite;z-index:99999;pointer-events:none;opacity:0;transition:opacity .25s ease} ';
                 wp_register_style( 'ap-lite-style', false, [], self::VERSION );
                 wp_enqueue_style( 'ap-lite-style' );
                 wp_add_inline_style( 'ap-lite-style', $css );
-                wp_add_inline_style( 'ap-lite-style', '#ap-lite-progress{background:' . $color . ';height:' . $height . 'px;}');
+                wp_add_inline_style( 'ap-lite-style', '#ap-lite-progress{background:' . $color . ';height:' . $height . 'px;}#ap-lite-spinner{color:' . $color . ';}');
         }
 
 	/**
@@ -168,6 +171,7 @@ class Whitestudioteam_AP_Lite {
         public function whitestudioteam_settings_init() {
                 register_setting( 'whitestudioteam_spa', 'whitestudioteam_loading_color', [ 'sanitize_callback' => 'sanitize_hex_color' ] );
                 register_setting( 'whitestudioteam_spa', 'whitestudioteam_loading_height', [ 'sanitize_callback' => 'absint' ] );
+                register_setting( 'whitestudioteam_spa', 'whitestudioteam_loading_style', [ 'sanitize_callback' => function( $v ) { return in_array( $v, [ 'bar', 'spinner' ], true ) ? $v : 'bar'; } ] );
 
                 add_settings_section( 'whitestudioteam_spa_section', __( 'Loading Settings', 'ap-lite' ), '__return_false', 'whitestudioteam_spa' );
 
@@ -192,6 +196,20 @@ class Whitestudioteam_AP_Lite {
                         'whitestudioteam_spa',
                         'whitestudioteam_spa_section'
                 );
+
+               add_settings_field(
+                       'whitestudioteam_loading_style',
+                       __( 'Loading style', 'ap-lite' ),
+                       function() {
+                               $val = esc_attr( get_option( 'whitestudioteam_loading_style', 'bar' ) );
+                               echo '<select name="whitestudioteam_loading_style">';
+                               echo '<option value="bar"' . selected( $val, 'bar', false ) . '>' . esc_html__( 'Bar', 'ap-lite' ) . '</option>';
+                               echo '<option value="spinner"' . selected( $val, 'spinner', false ) . '>' . esc_html__( 'Spinner', 'ap-lite' ) . '</option>';
+                               echo '</select>';
+                       },
+                       'whitestudioteam_spa',
+                       'whitestudioteam_spa_section'
+               );
         }
 
         public function whitestudioteam_render_settings_page() {
@@ -244,19 +262,34 @@ class Whitestudioteam_AP_Lite {
 	var cfg = window.AP_LITE || {};
 	var site = cfg.site || location.origin + '/';
 	var ROOT = cfg.rootSel || '#ap-root';
-	var FALLBACKS = (cfg.fallbackSels || []);
-	var fetching = false;
-	var progressEl;
+        var FALLBACKS = (cfg.fallbackSels || []);
+        var fetching = false;
+        var progressEl;
+        var spinnerEl;
+        var loadingStyle = cfg.loadingStyle || 'bar';
 
 	function qs(sel, ctx){ return (ctx||document).querySelector(sel); }
 	function qsa(sel, ctx){ return Array.prototype.slice.call((ctx||document).querySelectorAll(sel)); }
 	function sameOrigin(url){ try{ var u=new URL(url, location.href); return u.origin===location.origin; }catch(e){ return false; } }
 	function isHashJump(a){ return a.hash && (a.pathname===location.pathname) && a.hash!==''; }
 
-	function ensureProgress(){
-		if(progressEl) return progressEl; progressEl = document.createElement('div'); progressEl.id='ap-lite-progress'; document.body.appendChild(progressEl); return progressEl;
-	}
-	function setProgress(v){ ensureProgress().style.width = (v*100)+'%'; if(v>=1){ setTimeout(function(){ ensureProgress().style.opacity=0; setTimeout(function(){ ensureProgress().style.width='0'; ensureProgress().style.opacity=0.7; }, 250); }, 150);} }
+        function ensureProgress(){
+                if(progressEl) return progressEl; progressEl = document.createElement('div'); progressEl.id='ap-lite-progress'; document.body.appendChild(progressEl); return progressEl;
+        }
+        function ensureSpinner(){
+                if(spinnerEl) return spinnerEl; spinnerEl = document.createElement('div'); spinnerEl.id='ap-lite-spinner'; document.body.appendChild(spinnerEl); return spinnerEl;
+        }
+        function setProgress(v){
+                if(loadingStyle==='spinner'){
+                        var sp = ensureSpinner();
+                        if(v>=1){ sp.style.opacity = 0; }
+                        else { sp.style.opacity = 0.7; }
+                        return;
+                }
+                var bar = ensureProgress();
+                bar.style.width = (v*100)+'%';
+                if(v>=1){ setTimeout(function(){ bar.style.opacity=0; setTimeout(function(){ bar.style.width='0'; bar.style.opacity=0.7; }, 250); }, 150); }
+        }
 
 	function findRoot(doc){
 		var el = doc.querySelector(ROOT);
@@ -269,9 +302,9 @@ class Whitestudioteam_AP_Lite {
 		return el;
 	}
 	function updateTitle(doc){ var t=doc.querySelector('title'); if(t) document.title = t.textContent; }
-	function replaceContent(newDoc){
-		var src = findRoot(newDoc); if(!src) return false; var dst = findRoot(document); if(!dst) return false; dst.innerHTML = src.innerHTML; return true;
-	}
+        function replaceContent(newDoc){
+                var src = findRoot(newDoc); if(!src) return false; var dst = findRoot(document); if(!dst) return false; dst.innerHTML = src.innerHTML; Array.from(dst.attributes).forEach(function(a){ dst.removeAttribute(a.name); }); Array.from(src.attributes).forEach(function(a){ dst.setAttribute(a.name, a.value); }); return true;
+        }
 
 	function pjax(url, opts){
 		if(fetching) return; fetching=true; setProgress(0.2);
