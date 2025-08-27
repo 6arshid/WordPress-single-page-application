@@ -303,7 +303,14 @@ class Whitestudioteam_AP_Lite {
 	}
 	function updateTitle(doc){ var t=doc.querySelector('title'); if(t) document.title = t.textContent; }
         function replaceContent(newDoc){
-                var src = findRoot(newDoc); if(!src) return false; var dst = findRoot(document); if(!dst) return false; dst.innerHTML = src.innerHTML; Array.from(dst.attributes).forEach(function(a){ dst.removeAttribute(a.name); }); Array.from(src.attributes).forEach(function(a){ dst.setAttribute(a.name, a.value); }); return true;
+                var src = findRoot(newDoc); if(!src) return false; var dst = findRoot(document); if(!dst) return false;
+                var keep = [];
+                if(dst === document.body){ keep = Array.from(dst.querySelectorAll('#ap-lite-progress,#ap-lite-spinner')); }
+                dst.innerHTML = src.innerHTML;
+                Array.from(dst.attributes).forEach(function(a){ dst.removeAttribute(a.name); });
+                Array.from(src.attributes).forEach(function(a){ dst.setAttribute(a.name, a.value); });
+                if(dst === document.body){ keep.forEach(function(el){ document.body.appendChild(el); }); }
+                return true;
         }
 
 	function pjax(url, opts){
