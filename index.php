@@ -9,29 +9,31 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-class AP_Lite {
+class Whitestudioteam_AP_Lite {
 	const VERSION = '1.0.0';
-	private static $instance = null;
+        private static $instance = null;
 
-	public static function instance() {
-		if ( self::$instance === null ) {
-			self::$instance = new self();
-		}
-		return self::$instance;
-	}
+        public static function whitestudioteam_instance() {
+                if ( self::$instance === null ) {
+                        self::$instance = new self();
+                }
+                return self::$instance;
+        }
 
-	private function __construct() {
-		add_action( 'wp_enqueue_scripts', [ $this, 'assets' ] );
-		add_action( 'init', [ $this, 'register_rest' ] );
-		add_shortcode( 'ap_live_search', [ $this, 'shortcode_live_search' ] );
-		// Allow themes/plugins to override the SPA root selector
-		add_filter( 'ap_lite_root_selector', function( $sel ) { return '#ap-root'; } );
-	}
+        private function __construct() {
+                add_action( 'wp_enqueue_scripts', [ $this, 'whitestudioteam_assets' ] );
+                add_action( 'init', [ $this, 'whitestudioteam_register_rest' ] );
+                add_shortcode( 'ap_live_search', [ $this, 'whitestudioteam_shortcode_live_search' ] );
+                add_action( 'admin_menu', [ $this, 'whitestudioteam_admin_menu' ] );
+                add_action( 'admin_init', [ $this, 'whitestudioteam_settings_init' ] );
+                // Allow themes/plugins to override the SPA root selector
+                add_filter( 'ap_lite_root_selector', function( $sel ) { return '#ap-root'; } );
+        }
 
 	/**
 	 * Enqueue a tiny runtime and localize configuration
 	 */
-	public function assets() {
+        public function whitestudioteam_assets() {
 		// A tiny empty handle to attach inline code to
 		$handle = 'ap-lite';
 		wp_register_script( $handle, false, [], self::VERSION, true );
@@ -41,25 +43,29 @@ class AP_Lite {
 			'wpSearch'  => esc_url_raw( rest_url( 'wp/v2/search' ) ),
 			'nonce'     => wp_create_nonce( 'wp_rest' ),
 			'site'      => home_url( '/' ),
-			'rootSel'   => apply_filters( 'ap_lite_root_selector', '#ap-root' ),
-			'fallbackSels' => [ 'main', '#content', '#primary', '.site-content', '.content-area', '.entry-content' ],
+                        'rootSel'   => apply_filters( 'ap_lite_root_selector', '#ap-root' ),
+                        'fallbackSels' => [ 'main', '#content', '#primary', '.site-content', '.content-area', '.entry-content', '.wp-block-post-content', '.wp-site-blocks' ],
 		];
 
-		wp_localize_script( $handle, 'AP_LITE', $cfg );
-		wp_enqueue_script( $handle );
-		wp_add_inline_script( $handle, $this->runtime_js(), 'after' );
+                wp_localize_script( $handle, 'AP_LITE', $cfg );
+                wp_enqueue_script( $handle );
+                wp_add_inline_script( $handle, $this->whitestudioteam_runtime_js(), 'after' );
 
-		// minimal styles for progress + search results
+                $color  = sanitize_hex_color( get_option( 'whitestudioteam_loading_color', '#000000' ) );
+                $height = absint( get_option( 'whitestudioteam_loading_height', 3 ) );
+
+                // minimal styles for progress + search results
 		$css = '/* AjaxPress Lite styles */\n#ap-lite-progress{position:fixed;left:0;top:0;height:3px;width:0;z-index:99999;background:currentColor;opacity:.7;transition:width .25s ease,opacity .25s ease} .ap-live-wrap{position:relative} .ap-live-results{position:absolute;left:0;right:0;top:calc(100% + 6px);max-height:360px;overflow:auto;border:1px solid rgba(0,0,0,.08);background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.08);border-radius:8px;padding:8px} .ap-live-item{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:6px;text-decoration:none} .ap-live-item:hover{background:rgba(0,0,0,.04)} .ap-live-thumb{flex:0 0 48px;height:48px;object-fit:cover;border-radius:6px;background:#f2f2f2} .ap-live-title{font-weight:600;margin:0 0 4px} .ap-live-excerpt{margin:0;font-size:13px;opacity:.85} .ap-live-empty{padding:8px;color:#666;font-size:13px} .ap-live-results, .ap-live-results *{list-style:none;margin:0;padding:0} ';
-		wp_register_style( 'ap-lite-style', false, [], self::VERSION );
-		wp_enqueue_style( 'ap-lite-style' );
-		wp_add_inline_style( 'ap-lite-style', $css );
-	}
+                wp_register_style( 'ap-lite-style', false, [], self::VERSION );
+                wp_enqueue_style( 'ap-lite-style' );
+                wp_add_inline_style( 'ap-lite-style', $css );
+                wp_add_inline_style( 'ap-lite-style', '#ap-lite-progress{background:' . $color . ';height:' . $height . 'px;}');
+        }
 
 	/**
 	 * REST routes for search (rich) and comments
 	 */
-	public function register_rest() {
+        public function whitestudioteam_register_rest() {
 		register_rest_route( 'ap/v1', '/search', [
 			'methods'  => WP_REST_Server::READABLE,
 			'permission_callback' => '__return_true',
@@ -135,21 +141,78 @@ class AP_Lite {
 				$cid = wp_new_comment( $commentdata, true );
 				if ( is_wp_error( $cid ) ) return $cid;
 				$c = get_comment( $cid );
-				return rest_ensure_response( [
-					'id' => $c->comment_ID,
-					'approved' => (int) $c->comment_approved,
-					'content' => apply_filters( 'comment_text', $c->comment_content, $c ),
-					'author' => get_comment_author( $c ),
-					'html' => get_comment_text( $c )
-				] );
-			}
-		] );
-	}
+                                return rest_ensure_response( [
+                                        'id' => $c->comment_ID,
+                                        'approved' => (int) $c->comment_approved,
+                                        'content' => apply_filters( 'comment_text', $c->comment_content, $c ),
+                                        'author' => get_comment_author( $c ),
+                                        'html' => get_comment_text( $c )
+                                ] );
+                        }
+                ] );
+        }
+
+        /**
+         * Admin settings for loading bar.
+         */
+        public function whitestudioteam_admin_menu() {
+                add_options_page(
+                        'SPA Settings',
+                        'SPA Settings',
+                        'manage_options',
+                        'whitestudioteam-spa',
+                        [ $this, 'whitestudioteam_render_settings_page' ]
+                );
+        }
+
+        public function whitestudioteam_settings_init() {
+                register_setting( 'whitestudioteam_spa', 'whitestudioteam_loading_color', [ 'sanitize_callback' => 'sanitize_hex_color' ] );
+                register_setting( 'whitestudioteam_spa', 'whitestudioteam_loading_height', [ 'sanitize_callback' => 'absint' ] );
+
+                add_settings_section( 'whitestudioteam_spa_section', __( 'Loading Settings', 'ap-lite' ), '__return_false', 'whitestudioteam_spa' );
+
+                add_settings_field(
+                        'whitestudioteam_loading_color',
+                        __( 'Loading color', 'ap-lite' ),
+                        function() {
+                                $val = esc_attr( get_option( 'whitestudioteam_loading_color', '#000000' ) );
+                                echo '<input type="text" name="whitestudioteam_loading_color" value="' . $val . '" class="regular-text" />';
+                        },
+                        'whitestudioteam_spa',
+                        'whitestudioteam_spa_section'
+                );
+
+                add_settings_field(
+                        'whitestudioteam_loading_height',
+                        __( 'Loading height (px)', 'ap-lite' ),
+                        function() {
+                                $val = esc_attr( get_option( 'whitestudioteam_loading_height', 3 ) );
+                                echo '<input type="number" name="whitestudioteam_loading_height" value="' . $val . '" class="small-text" />';
+                        },
+                        'whitestudioteam_spa',
+                        'whitestudioteam_spa_section'
+                );
+        }
+
+        public function whitestudioteam_render_settings_page() {
+                ?>
+                <div class="wrap">
+                        <h1><?php esc_html_e( 'SPA Settings', 'ap-lite' ); ?></h1>
+                        <form action="options.php" method="post">
+                                <?php
+                                settings_fields( 'whitestudioteam_spa' );
+                                do_settings_sections( 'whitestudioteam_spa' );
+                                submit_button();
+                                ?>
+                        </form>
+                </div>
+                <?php
+        }
 
 	/**
 	 * Shortcode: [ap_live_search post_types="post,page" limit="8" placeholder="جستجو..."]
 	 */
-	public function shortcode_live_search( $atts ) {
+        public function whitestudioteam_shortcode_live_search( $atts ) {
 		$atts = shortcode_atts( [
 			'post_types' => 'post,page',
 			'limit' => 8,
@@ -174,7 +237,7 @@ class AP_Lite {
 	/**
 	 * Tiny SPA runtime (no deps)
 	 */
-	private function runtime_js() {
+        private function whitestudioteam_runtime_js() {
 		return <<<JS
 (function(){
 	'use strict';
@@ -312,5 +375,5 @@ JS;
 	}
 }
 
-AP_Lite::instance();
+Whitestudioteam_AP_Lite::whitestudioteam_instance();
 
