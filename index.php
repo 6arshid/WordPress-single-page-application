@@ -314,10 +314,3 @@ JS;
 
 AP_Lite::instance();
 
-/*
-USAGE NOTES:
-1) Wrap your theme's main content with <div id="ap-root"> ... </div>. If not possible, plugin will try common fallbacks (#primary, .site-content, .content-area, main, #content, .entry-content).
-2) Use [ap_live_search post_types="post,page" limit="8" placeholder="جستجو…"] anywhere to render an instant search box.
-3) Comment forms (default #commentform) will submit via AJAX. If comment requires moderation, the user is told.
-4) Links with class .no-ajax or target _blank are ignored by SPA. External links are never hijacked.
-*/
