@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WordPress single page application
  * Description: A lightweight, theme‑agnostic SPA layer for WordPress with PJAX‑style navigation, live search shortcode, and AJAX comments — all in one file.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: mrlast, hassantafreshi, mostafas1990
  * License: MIT
  */
@@ -10,7 +10,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class Whitestudioteam_AP_Lite {
-	const VERSION = '1.0.0';
+        const VERSION = '1.0.1';
         private static $instance = null;
 
         public static function whitestudioteam_instance() {
@@ -301,7 +301,19 @@ class Whitestudioteam_AP_Lite {
 		if(el.tagName && el.tagName.toLowerCase()==='li'){ el = el.parentElement || el; }
 		return el;
 	}
-	function updateTitle(doc){ var t=doc.querySelector('title'); if(t) document.title = t.textContent; }
+        function updateTitle(doc){ var t=doc.querySelector('title'); if(t) document.title = t.textContent; }
+        function executeScripts(root){
+                var scripts = root.querySelectorAll('script');
+                scripts.forEach(function(old){
+                        var type = (old.type || '').trim();
+                        if(type && type !== 'text/javascript' && type !== 'application/javascript') return;
+                        if(old.id && old.id.indexOf('ap-lite') === 0) return;
+                        var s = document.createElement('script');
+                        Array.from(old.attributes).forEach(function(a){ s.setAttribute(a.name, a.value); });
+                        s.appendChild(document.createTextNode(old.textContent));
+                        old.parentNode.replaceChild(s, old);
+                });
+        }
         function replaceContent(newDoc){
                 var src = findRoot(newDoc); if(!src) return false; var dst = findRoot(document); if(!dst) return false;
                 var keep = [];
@@ -310,6 +322,7 @@ class Whitestudioteam_AP_Lite {
                 Array.from(dst.attributes).forEach(function(a){ dst.removeAttribute(a.name); });
                 Array.from(src.attributes).forEach(function(a){ dst.setAttribute(a.name, a.value); });
                 if(dst === document.body){ keep.forEach(function(el){ document.body.appendChild(el); }); }
+                executeScripts(dst);
                 return true;
         }
 
