@@ -43,9 +43,9 @@ class Whitestudioteam_AP_Lite {
 			'wpSearch'  => esc_url_raw( rest_url( 'wp/v2/search' ) ),
 			'nonce'     => wp_create_nonce( 'wp_rest' ),
 			'site'      => home_url( '/' ),
-                        'rootSel'   => apply_filters( 'ap_lite_root_selector', '#ap-root' ),
-                        'fallbackSels' => [ 'main', '#content', '#primary', '.site-content', '.content-area', '.entry-content', '.wp-block-post-content', '.wp-site-blocks' ],
-		];
+                       'rootSel'   => apply_filters( 'ap_lite_root_selector', '#ap-root' ),
+                       'fallbackSels' => apply_filters( 'ap_lite_fallback_selectors', [ 'main', '#content', '#primary', '.site-content', '.content-area', '.entry-content', '.wp-block-post-content', '.wp-site-blocks', '#page', '.site', 'body' ] ),
+               ];
 
                 wp_localize_script( $handle, 'AP_LITE', $cfg );
                 wp_enqueue_script( $handle );
@@ -175,12 +175,12 @@ class Whitestudioteam_AP_Lite {
                         'whitestudioteam_loading_color',
                         __( 'Loading color', 'ap-lite' ),
                         function() {
-                                $val = esc_attr( get_option( 'whitestudioteam_loading_color', '#000000' ) );
-                                echo '<input type="text" name="whitestudioteam_loading_color" value="' . $val . '" class="regular-text" />';
-                        },
-                        'whitestudioteam_spa',
-                        'whitestudioteam_spa_section'
-                );
+                               $val = esc_attr( get_option( 'whitestudioteam_loading_color', '#000000' ) );
+                               echo '<input type="color" name="whitestudioteam_loading_color" value="' . $val . '" />';
+                       },
+                       'whitestudioteam_spa',
+                       'whitestudioteam_spa_section'
+               );
 
                 add_settings_field(
                         'whitestudioteam_loading_height',
