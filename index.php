@@ -334,9 +334,15 @@ class Whitestudioteam_AP_Lite {
 			var doc = new DOMParser().parseFromString(html,'text/html');
 			updateTitle(doc);
 			var ok = replaceContent(doc);
-			setProgress(1);
-			if(ok){ window.history.pushState({url:url}, '', url); window.scrollTo({top:0,behavior:'smooth'}); bindDynamic(); }
-			else { location.href = url; }
+                       setProgress(1);
+                       if(ok){
+                               window.history.pushState({url:url}, '', url);
+                               window.scrollTo({top:0,behavior:'smooth'});
+                               bindDynamic();
+                               document.dispatchEvent(new CustomEvent('ap-lite:after-load'));
+                               if(window.jQuery){ jQuery(document).trigger('ap-lite-after-load'); }
+                       }
+                       else { location.href = url; }
 		})
 		.catch(function(){ location.href = url; })
 		.finally(function(){ fetching=false; });
@@ -421,8 +427,10 @@ class Whitestudioteam_AP_Lite {
 
 	// Initial binds
 	document.addEventListener('click', onClick);
-	window.addEventListener('popstate', function(e){ if(e.state && e.state.url){ pjax(e.state.url); } });
-	bindDynamic(document);
+       window.addEventListener('popstate', function(e){ if(e.state && e.state.url){ pjax(e.state.url); } });
+       bindDynamic(document);
+       document.dispatchEvent(new CustomEvent('ap-lite:after-load'));
+       if(window.jQuery){ jQuery(document).trigger('ap-lite-after-load'); }
 })();
 JS;
 	}
